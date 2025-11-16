@@ -1,0 +1,62 @@
+DELIMITER //
+
+-- Procedure for salary increment with audit trail
+CREATE PROCEDURE GiveSalaryIncrement(
+    IN p_employee_id INT,
+    IN p_increment_percent DECIMAL(5,2),
+    IN p_reason VARCHAR(255),
+    IN p_changed_by VARCHAR(100)
+)
+BEGIN
+    DECLARE old_salary DECIMAL(10,2);
+    DECLARE new_salary DECIMAL(10,2);
+    DECLARE EXIT HANDLER FOR SQLEXCEPTION
+    BEGIN
+        ROLLBACK;
+        RESIGNAL;
+    END;
+    
+    START TRANSACTION;
+    
+    -- Get current salary
+    SELECT salary INTO old_salary 
+    FROM employees 
+    WHERE employee_id = p_employee_id AND status = 'ACTIVE';
+    
+    -- Calculate new salary
+    SET new_salary = old_salary * (1 + p_increment_percent/100);
+    
+    -- Update employee salary
+    UPDATE employees 
+    SET salary = new_salary 
+    WHERE employee_id = p_employee_id;
+    
+    -- Record in salary history
+    INSERT INTO salary_history 
+    (employee_id, old_salary, new_salary, changed_by, reason)
+    VALUES (p_employee_id, old_salary, new_salary, p_changed_by, p_reason);
+    
+    COMMIT;
+END//
+
+-- Function to calculate employee tenure
+CREATE FUNCTION CalculateTenure(employee_id INT) 
+RETURNS VARCHAR(50)
+READS SQL DATA
+DETERMINISTIC
+BEGIN
+    DECLARE years INT;
+    DECLARE months INT;
+    DECLARE hire_d DATE;
+    
+    SELECT hire_date INTO hire_d 
+    FROM employees 
+    WHERE employee_id = employee_id;
+    
+    SET years = TIMESTAMPDIFF(YEAR, hire_d, CURDATE());
+    SET months = TIMESTAMPDIFF(MONTH, hire_d, CURDATE()) - (years * 12);
+    
+    RETURN CONCAT(years, ' years ', months, ' months');
+END//
+
+DELIMITER ;
