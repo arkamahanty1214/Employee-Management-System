@@ -1,0 +1,71 @@
+CREATE TABLE employees (
+    employee_id INT PRIMARY KEY AUTO_INCREMENT,
+    national_id VARCHAR(20) UNIQUE NOT NULL,
+    first_name VARCHAR(50) NOT NULL,
+    last_name VARCHAR(50) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    phone VARCHAR(15),
+    hire_date DATE NOT NULL,
+    job_title VARCHAR(100) NOT NULL,
+    department_id INT,
+    manager_id INT,
+    salary DECIMAL(10,2) CHECK (salary > 0),
+    status ENUM('ACTIVE', 'ON_LEAVE', 'TERMINATED') DEFAULT 'ACTIVE',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_department (department_id),
+    INDEX idx_manager (manager_id),
+    INDEX idx_email (email),
+    INDEX idx_status (status),
+    FOREIGN KEY (department_id) REFERENCES departments(department_id),
+    FOREIGN KEY (manager_id) REFERENCES employees(employee_id)
+);
+
+-- Departments table with hierarchy support
+CREATE TABLE departments (
+    department_id INT PRIMARY KEY AUTO_INCREMENT,
+    department_name VARCHAR(100) UNIQUE NOT NULL,
+    manager_id INT,
+    location VARCHAR(100),
+    budget DECIMAL(15,2) DEFAULT 0,
+    parent_department_id INT NULL,
+    FOREIGN KEY (manager_id) REFERENCES employees(employee_id),
+    FOREIGN KEY (parent_department_id) REFERENCES departments(department_id)
+);
+
+-- Salary history for audit trail
+CREATE TABLE salary_history (
+    history_id INT PRIMARY KEY AUTO_INCREMENT,
+    employee_id INT NOT NULL,
+    old_salary DECIMAL(10,2),
+    new_salary DECIMAL(10,2),
+    change_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    changed_by VARCHAR(100),
+    reason VARCHAR(255),
+    FOREIGN KEY (employee_id) REFERENCES employees(employee_id),
+    INDEX idx_employee_date (employee_id, change_date)
+);
+
+-- Projects and assignments (many-to-many relationship)
+CREATE TABLE projects (
+    project_id INT PRIMARY KEY AUTO_INCREMENT,
+    project_name VARCHAR(200) NOT NULL,
+    department_id INT,
+    budget DECIMAL(15,2),
+    start_date DATE,
+    end_date DATE,
+    status ENUM('PLANNING', 'ACTIVE', 'COMPLETED', 'CANCELLED'),
+    FOREIGN KEY (department_id) REFERENCES departments(department_id)
+);
+
+CREATE TABLE project_assignments (
+    assignment_id INT PRIMARY KEY AUTO_INCREMENT,
+    employee_id INT NOT NULL,
+    project_id INT NOT NULL,
+    role VARCHAR(50),
+    assignment_date DATE NOT NULL,
+    hours_assigned DECIMAL(5,2),
+    UNIQUE KEY unique_assignment (employee_id, project_id),
+    FOREIGN KEY (employee_id) REFERENCES employees(employee_id),
+    FOREIGN KEY (project_id) REFERENCES projects(project_id)
+);
