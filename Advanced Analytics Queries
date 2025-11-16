@@ -1,4 +1,4 @@
-# Department performance metrics
+-- Department performance metrics
 SELECT 
     d.department_name,
     COUNT(e.employee_id) as total_employees,
