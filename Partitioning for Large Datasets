@@ -1,0 +1,17 @@
+-- Partition salary history by year for better performance
+CREATE TABLE salary_history_partitioned (
+    history_id INT AUTO_INCREMENT,
+    employee_id INT,
+    old_salary DECIMAL(10,2),
+    new_salary DECIMAL(10,2),
+    change_date TIMESTAMP,
+    -- other columns...
+    PRIMARY KEY (history_id, change_date)
+) PARTITION BY RANGE (YEAR(change_date)) (
+    PARTITION p2020 VALUES LESS THAN (2021),
+    PARTITION p2021 VALUES LESS THAN (2022),
+    PARTITION p2022 VALUES LESS THAN (2023),
+    PARTITION p2023 VALUES LESS THAN (2024),
+    PARTITION p2024 VALUES LESS THAN (2025),
+    PARTITION p_future VALUES LESS THAN MAXVALUE
+);
