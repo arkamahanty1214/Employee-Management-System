@@ -1,0 +1,36 @@
+# Department performance metrics
+SELECT 
+    d.department_name,
+    COUNT(e.employee_id) as total_employees,
+    AVG(e.salary) as average_salary,
+    MAX(e.salary) as max_salary,
+    MIN(e.salary) as min_salary,
+    SUM(e.salary) as total_salary_budget,
+    COUNT(p.project_id) as active_projects,
+    SUM(pa.hours_assigned) as total_hours_allocated
+FROM departments d
+LEFT JOIN employees e ON d.department_id = e.department_id AND e.status = 'ACTIVE'
+LEFT JOIN projects p ON d.department_id = p.department_id AND p.status = 'ACTIVE'
+LEFT JOIN project_assignments pa ON p.project_id = pa.project_id
+GROUP BY d.department_id, d.department_name
+HAVING total_employees > 0
+ORDER BY total_salary_budget DESC;
+
+# Employee utilization report
+SELECT 
+    e.employee_id,
+    CONCAT(e.first_name, ' ', e.last_name) as employee_name,
+    d.department_name,
+    COUNT(pa.project_id) as assigned_projects,
+    COALESCE(SUM(pa.hours_assigned), 0) as total_hours,
+    CASE 
+        WHEN COUNT(pa.project_id) = 0 THEN 'UNDERUTILIZED'
+        WHEN COUNT(pa.project_id) > 3 THEN 'OVERUTILIZED'
+        ELSE 'OPTIMALLY UTILIZED'
+    END as utilization_status
+FROM employees e
+LEFT JOIN departments d ON e.department_id = d.department_id
+LEFT JOIN project_assignments pa ON e.employee_id = pa.employee_id
+WHERE e.status = 'ACTIVE'
+GROUP BY e.employee_id, employee_name, d.department_name
+ORDER BY total_hours DESC;
