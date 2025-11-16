@@ -1,0 +1,11 @@
+-- Using EXPLAIN to analyze query performance
+EXPLAIN ANALYZE
+SELECT e.first_name, e.last_name, d.department_name
+FROM employees e
+JOIN departments d ON e.department_id = d.department_id
+WHERE e.salary > 50000 AND e.hire_date > '2020-01-01';
+
+-- Creating optimized indexes
+CREATE INDEX idx_employee_salary_hire ON employees(salary, hire_date);
+CREATE INDEX idx_department_name ON departments(department_name);
+CREATE INDEX idx_project_status ON projects(status, start_date);
