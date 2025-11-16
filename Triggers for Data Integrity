@@ -1,0 +1,25 @@
+-- Trigger to prevent salary modification without audit
+DELIMITER //
+
+CREATE TRIGGER before_salary_update
+    BEFORE UPDATE ON employees
+    FOR EACH ROW
+BEGIN
+    IF OLD.salary <> NEW.salary THEN
+        INSERT INTO salary_audit_log 
+        (employee_id, old_salary, new_salary, changed_at, changed_by)
+        VALUES (OLD.employee_id, OLD.salary, NEW.salary, NOW(), USER());
+    END IF;
+END//
+
+-- Trigger to maintain department employee count
+CREATE TRIGGER after_employee_insert
+    AFTER INSERT ON employees
+    FOR EACH ROW
+BEGIN
+    UPDATE departments 
+    SET employee_count = employee_count + 1 
+    WHERE department_id = NEW.department_id;
+END//
+
+DELIMITER ;
